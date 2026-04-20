@@ -1,29 +1,32 @@
 from adk.core import Agent, Message
-from typing import List
-import re
+from adk.llm import call_gemini
+import json
 
 class SymptomAgent(Agent):
     def __init__(self):
-        super().__init__("SymptomAgent", "Extracts structured symptoms from free-text using heuristics/rules.")
-        
-        # A simple simulated dictionary of possible symptoms
-        self.known_symptoms = [
-            "fever", "headache", "cough", "chest pain", "shortness of breath",
-            "nausea", "dizziness", "bleeding", "rash", "fatigue", "pain"
-        ]
+        super().__init__("SymptomAgent", "Extracts structured symptoms from free-text using Gemini 2.5 Flash Lite.")
 
     def execute(self, message: Message) -> Message:
-        text = str(message.content).lower()
+        text = str(message.content)
         
-        # Simulated "LLM"/Extraction Logic: We just match known keywords for demonstration
-        extracted_symptoms = []
-        for symptom in self.known_symptoms:
-            if re.search(r'\b' + re.escape(symptom) + r'\b', text):
-                extracted_symptoms.append(symptom)
-                
-        # If no symptoms directly matched, generic fallback
-        if not extracted_symptoms:
-            extracted_symptoms.append("unknown or vague discomfort")
+        system_instruction = (
+            "You are a medical assistant agent. Extract symptoms from the user's input. "
+            "Respond ONLY with a valid JSON array of strings containing the symptoms. "
+            "For example: [\"fever\", \"headache\", \"chest pain\"]. "
+            "Do not include markdown blocks like ```json."
+        )
+        
+        try:
+            llm_response = call_gemini(system_instruction, text)
+            # Remove any trailing/leading markdown just in case the model adds it
+            clean_response = llm_response.strip().removeprefix("```json").removesuffix("```").strip()
+            extracted_symptoms = json.loads(clean_response)
+            if not isinstance(extracted_symptoms, list):
+                extracted_symptoms = [str(extracted_symptoms)]
+        except Exception as e:
+            print(f"[{self.name}] Error parsing LLM response: {e}")
+            print(f"[{self.name}] Raw Response was: {llm_response if 'llm_response' in locals() else 'Request failed'}")
+            extracted_symptoms = ["evaluation error"]
             
         print(f"[{self.name}] Extracted symptoms: {extracted_symptoms}")
             

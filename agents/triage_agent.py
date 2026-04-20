@@ -1,39 +1,39 @@
 from adk.core import Agent, Message
+from adk.llm import call_gemini
 from typing import List
+import json
 
 class TriageAgent(Agent):
     def __init__(self):
-        super().__init__("TriageAgent", "Evaluates severity using rules and mock LLM reasoning.")
-        
-        # Simulated predefined rules
-        self.critical_symptoms = {"chest pain", "shortness of breath", "bleeding"}
-        self.moderate_symptoms = {"fever", "dizziness", "pain"}
+        super().__init__("TriageAgent", "Evaluates severity using Gemini 2.5 Flash Lite reasoning.")
         
     def execute(self, message: Message) -> Message:
         symptoms: List[str] = message.content
+        symptoms_text = ", ".join(symptoms)
         
-        severity_score = 0
-        reasoning = []
+        system_instruction = (
+            "You are a medical triage agent. Given a list of symptoms, determine the severity as strictly 'Low', 'Medium', or 'High'. "
+            "Your output must be strictly valid JSON without any markdown block formatting. "
+            "Format: {\"classification\": \"High/Medium/Low\", \"reasoning\": \"1 sentence explanation\"}. "
+            "Example: {\"classification\": \"High\", \"reasoning\": \"Chest pain indicates a potential cardiac event requiring immediate attention.\"}"
+        )
         
-        for symptom in symptoms:
-            if symptom in self.critical_symptoms:
-                severity_score += 5
-                reasoning.append(f"CRITICAL: '{symptom}' requires immediate attention.")
-            elif symptom in self.moderate_symptoms:
-                severity_score += 2
-                reasoning.append(f"MODERATE: '{symptom}' increases priority.")
-            else:
-                severity_score += 1
-                reasoning.append(f"MILD: '{symptom}' is of standard priority.")
-                
-        # Normalize severity classification
-        classification = "Low"
-        if severity_score >= 5:
-            classification = "High"
-        elif severity_score >= 3:
-            classification = "Medium"
+        try:
+            llm_response = call_gemini(system_instruction, symptoms_text)
+            clean_response = llm_response.strip().removeprefix("```json").removesuffix("```").strip()
+            result = json.loads(clean_response)
             
-        print(f"[{self.name}] Reasoned Severity: {classification} (Score: {severity_score})")
+            classification = result.get("classification", "Low")
+            reasoning = [result.get("reasoning", "No valid reasoning provided.")]
+            # Arbitrary score for backward compatibility with RoutingAgent logic which we might skip using
+            severity_score = 5 if classification == "High" else (3 if classification == "Medium" else 1)
+        except Exception as e:
+            print(f"[{self.name}] Error parsing LLM response: {e}")
+            classification = "Medium" # Fallback
+            reasoning = ["Error performing triage."]
+            severity_score = 3
+            
+        print(f"[{self.name}] Reasoned Severity: {classification}")
         
         return Message(
             sender=self.name,
