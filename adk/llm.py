@@ -19,7 +19,8 @@ def call_gemini(system_instruction: str, prompt: str) -> str:
             }
         ],
         "generationConfig": {
-            "temperature": 0.2
+            "temperature": 0.0,
+            "response_mime_type": "application/json"
         }
     }
     
