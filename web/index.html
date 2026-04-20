@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADK Orbit | Smart Healthcare Orchestrator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span class="icon">⚕️</span>
+                <h1>ADK <span class="highlight">Orbit</span></h1>
+            </div>
+            <p class="subtitle">Multi-Agent Triage Orchestrator powered by Gemini</p>
+        </header>
+
+        <main class="glass-card">
+            <div class="input-section">
+                <label for="complaint-input">Patient Complaint</label>
+                <div class="input-wrapper">
+                    <textarea id="complaint-input" placeholder="Describe your symptoms (e.g., 'I have severe chest pain and am short of breath')"></textarea>
+                    <button id="submit-btn" class="primary-btn">
+                        <span>Initialize Triage</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="triage-board" id="triage-board" style="display: none;">
+                <h3 class="board-title">Orchestration Trace</h3>
+                <div class="timeline" id="timeline">
+                    <!-- Dynamic trace nodes will be injected here -->
+                </div>
+                
+                <div class="result-card" id="result-card" style="display:none;">
+                    <h4>Final Recommended Routing</h4>
+                    <div id="final-decision" class="decision-text"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
